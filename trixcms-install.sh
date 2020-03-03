@@ -330,9 +330,9 @@ function aptinstall_phpmyadmin() {
 function install_ioncube() {
   wget https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz
   tar -xvzf ioncube_loaders_lin_x86-64.tar.gz
-  cd ioncube && cp ioncube_loader_lin_$PHP.so /usr/lib/php/20170718/
-  echo "zend_extension=/usr/lib/php/20170718/ioncube_loader_lin_$PHP.so" >>/etc/php/$PHP/apache2/php.ini
-  echo "zend_extension=/usr/lib/php/20170718/ioncube_loader_lin_$PHP.so" >>/etc/php/$PHP/cli/php.ini
+  cd ioncube && cp ioncube_loader_lin_$PHP.so /usr/lib/php/20180731/
+  echo "zend_extension=/usr/lib/php/20180731/ioncube_loader_lin_$PHP.so" >>/etc/php/$PHP/apache2/php.ini
+  echo "zend_extension=/usr/lib/php/20180731/ioncube_loader_lin_$PHP.so" >>/etc/php/$PHP/cli/php.ini
   systemctl restart apache2
 }
 
@@ -368,7 +368,7 @@ function autoUpdate() {
 }
 
 function setupdone() {
-  echo "Yep, it done${normal}"
+  echo "C'est terminé !${normal}"
 }
 function manageMenu() {
   clear
