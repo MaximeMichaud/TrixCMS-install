@@ -5,9 +5,9 @@
 [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://github.com/MaximeMichaud/TrixCMS-install/blob/master/LICENSE)
 ## Usage
 ```sh
-wget https://raw.githubusercontent.com/MaximeMichaud/TrixCMS-install/master/TrixCMS-install.sh
-chmod +x TrixCMS-install.sh
-./TrixCMS-install.sh
+wget https://raw.githubusercontent.com/MaximeMichaud/TrixCMS-install/master/trixcms-install.sh
+chmod +x trixcms-install.sh
+./trixcms-install.sh
 ```
 ## Compatibilité
 Veuillez considérer les dernières versions comme étant plus stable.
