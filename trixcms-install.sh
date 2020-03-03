@@ -68,7 +68,7 @@ function initialCheck() {
 }
 
 # Define versions
-PHPMYADMINS_VER=4.9.4
+PHPMYADMIN_VER=5.0.1
 
 function checkOS() {
   if [[ -e /etc/debian_version ]]; then
@@ -76,22 +76,52 @@ function checkOS() {
     source /etc/os-release
 
     if [[ "$ID" == "debian" || "$ID" == "raspbian" ]]; then
-      if [[ ! $VERSION_ID =~ (10) ]]; then
-        echo "⚠️ ${alert}Votre version de Debian n'est pas supportée.${normal}"
+      if [[ ! $VERSION_ID =~ (8|9|10) ]]; then
+        echo "${alert}Votre version de Debian n'est pas supportée.${normal}"
         echo ""
-        echo "However, if you're using Debian >= 10 or unstable/testing then you can continue."
+        echo "${red}Si vous le souhaitez, vous pouvez tout de même continuer."
         echo "Gardez à l'esprit que ce n'est supportée !${normal}"
         echo ""
         until [[ $CONTINUE =~ (y|n) ]]; do
-          read -rp "Continuer? [y/n] : " -e CONTINUE
+          read -rp "Continuer ? [y/n] : " -e CONTINUE
+        done
+        if [[ "$CONTINUE" == "n" ]]; then
+          exit 1
+        fi
+      fi
+    elif [[ "$ID" == "ubuntu" ]]; then
+      OS="ubuntu"
+      if [[ ! $VERSION_ID =~ (16.04|18.04) ]]; then
+        echo "${alert}Votre version de Ubuntu n'est pas supportée.${normal}"
+        echo ""
+        echo "${red}Si vous le souhaitez, vous pouvez tout de même continuer."
+        echo "Gardez à l'esprit que ce n'est supportée !${normal}"
+        echo ""
+        until [[ $CONTINUE =~ (y|n) ]]; do
+          read -rp "Continuer? [y/n]: " -e CONTINUE
         done
         if [[ "$CONTINUE" == "n" ]]; then
           exit 1
         fi
       fi
     fi
+  elif [[ -e /etc/fedora-release ]]; then
+    OS=fedora
+  elif [[ -e /etc/centos-release ]]; then
+    if ! grep -qs "^CentOS Linux release 7" /etc/centos-release; then
+      echo "${alert}Votre version de CentOS n'est pas supportée.${normal}"
+      echo "${red}Gardez à l'esprit que ce n'est supportée !${normal}"
+      echo ""
+      unset CONTINUE
+      until [[ $CONTINUE =~ (y|n) ]]; do
+        read -rp "Continuer? [y/n] : " -e CONTINUE
+      done
+      if [[ "$CONTINUE" == "n" ]]; then
+        exit 1
+      fi
+    fi
   else
-    echo "${alert}On dirait que vous n'exécutez pas ce script d'installation automatique sur une distribution Debian ayant Debian 9/10 ${normal}"
+    echo "${alert}On dirait que vous n'exécutez pas ce script d'installation automatique sur une distribution Debian/Ubuntu ${normal}"
     exit 1
   fi
 }
@@ -106,8 +136,6 @@ function script() {
   aptinstall_phpmyadmin
   install_trixcms
   install_ioncube
-  install_composer
-  autoUpdate
   setupdone
 
 }
@@ -148,57 +176,155 @@ function installQuestions() {
 
 function aptupdate() {
   apt-get update >/dev/null
-  apt-get upgrade -y >/dev/null
 }
 function aptinstall() {
-  apt-get -y install ca-certificates apt-transport-https dirmngr zip unzip sudo lsb-release gnupg2 openssl curl >/dev/null
-  echo "Mise à jour de la date..."
-  ntpdate pool.ntp.org >/dev/null
+  apt-get -y install ca-certificates apt-transport-https dirmngr zip unzip sudo lsb-release gnupg openssl curl >/dev/null
 }
 
 function aptinstall_apache2() {
   apt-get install -y apache2
   a2enmod rewrite
-  wget http://mineweb.maximemichaud.me/000-default.conf
+  wget https://raw.githubusercontent.com/MaximeMichaud/TrixCMS-install/master/conf/000-default.conf
   mv 000-default.conf /etc/apache2/sites-available/
   rm -rf 000-default.conf
   service apache2 restart
 }
 
 function aptinstall_mysql() {
-  echo "deb http://repo.mysql.com/apt/debian/ buster mysql-8.0" >/etc/apt/sources.list.d/mysql.list
-  echo "deb-src http://repo.mysql.com/apt/debian/ buster mysql-8.0" >>/etc/apt/sources.list.d/mysql.list
-  apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
-  apt-get update >/dev/null
-  apt-get install --allow-unauthenticated mysql-server mysql-client -y
-  systemctl enable mysql && systemctl start mysql
+  if [[ "$OS" =~ (debian|ubuntu) ]]; then
+    echo "MYSQL Installation"
+    if [[ "$VERSION_ID" == "8" ]]; then
+      echo "deb http://repo.mysql.com/apt/debian/ jessie mysql-8.0" >/etc/apt/sources.list.d/mysql.list
+      echo "deb-src http://repo.mysql.com/apt/debian/ jessie mysql-8.0" >>/etc/apt/sources.list.d/mysql.list
+      apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
+      apt-get -o Acquire::Check-Valid-Until=false update
+      apt-get install --allow-unauthenticated mysql-server mysql-client -y
+      systemctl enable mysql && systemctl start mysql
+    fi
+    if [[ "$VERSION_ID" == "9" ]]; then
+      echo "deb http://repo.mysql.com/apt/debian/ stretch mysql-8.0" >/etc/apt/sources.list.d/mysql.list
+      echo "deb-src http://repo.mysql.com/apt/debian/ stretch mysql-8.0" >>/etc/apt/sources.list.d/mysql.list
+      apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
+      apt-get update
+      apt-get install --allow-unauthenticated mysql-server mysql-client -y
+      systemctl enable mysql && systemctl start mysql
+    fi
+    if [[ "$VERSION_ID" == "10" ]]; then
+      echo "deb http://repo.mysql.com/apt/debian/ buster mysql-8.0" >/etc/apt/sources.list.d/mysql.list
+      echo "deb-src http://repo.mysql.com/apt/debian/ buster mysql-8.0" >>/etc/apt/sources.list.d/mysql.list
+      apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
+      apt-get update
+      apt-get install --allow-unauthenticated mysql-server mysql-client -y
+      systemctl enable mysql && systemctl start mysql
+    fi
+    if [[ "$VERSION_ID" == "16.04" ]]; then
+      wget https://dev.mysql.com/get/mysql-apt-config_0.8.8-1_all.deb
+      ls mysql-apt-config_0.8.8-1_all.deb
+      dpkg -i mysql-apt-config_0.8.8-1_all.deb
+      apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
+      apt-get update
+      apt-get install --allow-unauthenticated mysql-server mysql-client -y
+      systemctl enable mysql && systemctl start mysql
+    fi
+    if [[ "$VERSION_ID" == "18.04" ]]; then
+      wget https://dev.mysql.com/get/mysql-apt-config_0.8.13-1_all.deb
+      ls mysql-apt-config_0.8.13-1_all.deb
+      dpkg -i mysql-apt-config_0.8.13-1_all.deb
+      apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
+      apt-get update
+      apt-get install --allow-unauthenticated mysql-server mysql-client -y
+      systemctl enable mysql && systemctl start mysql
+    fi
+    if [[ "$VERSION_ID" == "20.04" ]]; then
+      wget https://dev.mysql.com/get/mysql-apt-config_0.8.13-1_all.deb
+      ls mysql-apt-config_0.8.13-1_all.deb
+      dpkg -i mysql-apt-config_0.8.13-1_all.deb
+      apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
+      apt-get update
+      apt-get install --allow-unauthenticated mysql-server mysql-client -y
+      systemctl enable mysql && systemctl start mysql
+    fi
+  fi
 }
 
 function aptinstall_php() {
-  wget -q https://packages.sury.org/php/apt.gpg -O- | sudo apt-key add -
-  echo "deb https://packages.sury.org/php/ buster main" | sudo tee /etc/apt/sources.list.d/php.list
-  apt-get update >/dev/null
-  apt-get install php$PHP libapache2-mod-php$PHP php$PHP-mysql php$PHP-curl php$PHP-json php$PHP-gd php$PHP-memcached php$PHP-intl php$PHP-sqlite3 php$PHP-gmp php$PHP-geoip php$PHP-mbstring php$PHP-xml php$PHP-zip -y
-  sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20M|' /etc/php/$PHP/apache2/php.ini
-  sed -i 's|post_max_size = 8M|post_max_size = 20M|' /etc/php/$PHP/apache2/php.ini
+  if [[ "$OS" =~ (debian|ubuntu) ]]; then
+    echo "PHP Installation"
+    wget -q https://packages.sury.org/php/apt.gpg -O- | sudo apt-key add -
+    if [[ "$VERSION_ID" == "8" ]]; then
+      echo "deb https://packages.sury.org/php/ jessie main" | sudo tee /etc/apt/sources.list.d/php.list
+      apt-get update >/dev/null
+      apt-get install php$PHP php$PHP-bcmath php$PHP-json php$PHP-mbstring php$PHP-common php$PHP-xml php$PHP-curl php$PHP-gd php$PHP-zip php$PHP-mysql php$PHP-sqlite -y
+      sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20M|' /etc/php/$PHP/apache2/php.ini
+      sed -i 's|post_max_size = 8M|post_max_size = 20M|' /etc/php/$PHP/apache2/php.ini
+      systemctl restart apache2
+    fi
+    if [[ "$VERSION_ID" == "9" ]]; then
+      echo "deb https://packages.sury.org/php/ stretch main" | sudo tee /etc/apt/sources.list.d/php.list
+      apt-get update >/dev/null
+      apt-get install php$PHP php$PHP-bcmath php$PHP-json php$PHP-mbstring php$PHP-common php$PHP-xml php$PHP-curl php$PHP-gd php$PHP-zip php$PHP-mysql php$PHP-sqlite -y
+      sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20M|' /etc/php/$PHP/apache2/php.ini
+      sed -i 's|post_max_size = 8M|post_max_size = 20M|' /etc/php/$PHP/apache2/php.ini
+      systemctl restart apache2
+    fi
+    if [[ "$VERSION_ID" == "10" ]]; then
+      echo "deb https://packages.sury.org/php/ buster main" | sudo tee /etc/apt/sources.list.d/php.list
+      apt-get update >/dev/null
+      apt-get install php$PHP php$PHP-bcmath php$PHP-json php$PHP-mbstring php$PHP-common php$PHP-xml php$PHP-curl php$PHP-gd php$PHP-zip php$PHP-mysql php$PHP-sqlite -y
+      sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20M|' /etc/php/$PHP/apache2/php.ini
+      sed -i 's|post_max_size = 8M|post_max_size = 20M|' /etc/php/$PHP/apache2/php.ini
+      systemctl restart apache2
+    fi
+    if [[ "$VERSION_ID" == "16.04" ]]; then
+      add-apt-repository -y ppa:ondrej/php
+      apt-get update >/dev/null
+      apt install php$PHP libapache2-mod-php$PHP php$PHP-mysql php$PHP-curl php$PHP-json php$PHP-gd php$PHP-memcached php$PHP-intl php$PHP-sqlite3 php$PHP-gmp php$PHP-geoip php$PHP-mbstring php$PHP-xml php$PHP-zip -y
+      sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20M|' /etc/php/$PHP/apache2/php.ini
+      sed -i 's|post_max_size = 8M|post_max_size = 20M|' /etc/php/$PHP/apache2/php.ini
+      systemctl restart apache2
+    fi
+    if [[ "$VERSION_ID" == "18.04" ]]; then
+      add-apt-repository -y ppa:ondrej/php
+      apt-get update >/dev/null
+      apt install php$PHP libapache2-mod-php$PHP php$PHP-mysql php$PHP-curl php$PHP-json php$PHP-gd php$PHP-memcached php$PHP-intl php$PHP-sqlite3 php$PHP-gmp php$PHP-geoip php$PHP-mbstring php$PHP-xml php$PHP-zip -y
+      sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20M|' /etc/php/$PHP/apache2/php.ini
+      sed -i 's|post_max_size = 8M|post_max_size = 20M|' /etc/php/$PHP/apache2/php.ini
+      systemctl restart apache2
+    fi
+    if [[ "$VERSION_ID" == "20.04" ]]; then
+      add-apt-repository -y ppa:ondrej/php
+      apt-get update >/dev/null
+      apt install php$PHP libapache2-mod-php$PHP php$PHP-mysql php$PHP-curl php$PHP-json php$PHP-gd php$PHP-memcached php$PHP-intl php$PHP-sqlite3 php$PHP-gmp php$PHP-geoip php$PHP-mbstring php$PHP-xml php$PHP-zip -y
+      sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20M|' /etc/php/$PHP/apache2/php.ini
+      sed -i 's|post_max_size = 8M|post_max_size = 20M|' /etc/php/$PHP/apache2/php.ini
+      systemctl restart apache2
+    fi
+  fi
 }
 
 function aptinstall_phpmyadmin() {
-  mkdir /usr/share/phpmyadmin/
-  cd /usr/share/phpmyadmin/
-  wget https://files.phpmyadmin.net/phpMyAdmin/$PHPMYADMINS_VER/phpMyAdmin-$PHPMYADMINS_VER-all-languages.tar.gz
-  tar xzf phpMyAdmin-$PHPMYADMINS_VER-all-languages.tar.gz
-  mv phpMyAdmin-$PHPMYADMINS_VER-all-languages/* /usr/share/phpmyadmin
-  rm /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMINS_VER-all-languages.tar.gz
-  rm -rf /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMINS_VER-all-languages
-  wget http://mineweb.maximemichaud.me/phpmyadmin.conf
-  mv phpmyadmin.conf /etc/apache2/sites-available/
-  mkdir /usr/share/phpmyadmin/tmp
-  chmod 777 /usr/share/phpmyadmin/tmp
-  randomBlowfishSecret=$(openssl rand -base64 32)
-  sed -e "s|cfg\['blowfish_secret'\] = ''|cfg['blowfish_secret'] = '$randomBlowfishSecret'|" config.sample.inc.php >config.inc.php
-  a2ensite phpmyadmin
-  systemctl restart apache2
+  echo "phpMyAdmin Installation"
+  if [[ "$OS" =~ (debian|ubuntu) ]]; then
+    mkdir /usr/share/phpmyadmin/
+    cd /usr/share/phpmyadmin/ || exit
+    wget https://files.phpmyadmin.net/phpMyAdmin/$PHPMYADMIN_VER/phpMyAdmin-$PHPMYADMIN_VER-all-languages.tar.gz
+    tar xzf phpMyAdmin-$PHPMYADMIN_VER-all-languages.tar.gz
+    mv phpMyAdmin-$PHPMYADMIN_VER-all-languages/* /usr/share/phpmyadmin
+    rm /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMIN_VER-all-languages.tar.gz
+    rm -rf /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMIN_VER-all-languages
+    wget https://raw.githubusercontent.com/MaximeMichaud/TrixCMS-install/master/conf/phpmyadmin.conf
+    mv phpmyadmin.conf /etc/apache2/sites-available/
+    mkdir /usr/share/phpmyadmin/tmp
+    chmod 777 /usr/share/phpmyadmin/tmp
+    randomBlowfishSecret=$(openssl rand -base64 32)
+    sed -e "s|cfg\['blowfish_secret'\] = ''|cfg['blowfish_secret'] = '$randomBlowfishSecret'|" config.sample.inc.php >config.inc.php
+    a2ensite phpmyadmin
+    systemctl restart apache2
+  elif [[ "$OS" =~ (centos|amzn) ]]; then
+    echo "No Support"
+  elif [[ "$OS" == "fedora" ]]; then
+    echo "No Support"
+  fi
 }
 
 function install_ioncube() {
@@ -228,7 +354,7 @@ function install_composer() {
 
 function apt-apache2_cloudflare() {
   apt-get update >/dev/null
-  cd /root/
+  cd /root/ || exit
   apt-get install libtool apache2-dev
   wget https://www.cloudflare.com/static/misc/mod_cloudflare/mod_cloudflare.c
   apxs -a -i -c mod_cloudflare.c
@@ -280,24 +406,24 @@ function manageMenu() {
 }
 
 function update() {
-  wget https://raw.githubusercontent.com/MaximeMichaud/azorium-install/master/azorium-install.sh -O azorium-install.sh
-  chmod +x azorium-install.sh
+  wget https://raw.githubusercontent.com/MaximeMichaud/trixcms-install/master/trixcms-install.sh -O trixcms-install.sh
+  chmod +x trixcms-install.sh
   echo ""
   echo "Mise à jour effectuée."
   sleep 2
-  ./azorium-install.sh
+  ./trixcms-install.sh
   exit
 }
 
 function updatephpMyAdmin() {
   rm -rf /usr/share/phpmyadmin/
   mkdir /usr/share/phpmyadmin/
-  cd /usr/share/phpmyadmin/
-  wget https://files.phpmyadmin.net/phpMyAdmin/$PHPMYADMINS_VER/phpMyAdmin-$PHPMYADMINS_VER-all-languages.tar.gz
-  tar xzf phpMyAdmin-$PHPMYADMINS_VER-all-languages.tar.gz
-  mv phpMyAdmin-$PHPMYADMINS_VER-all-languages/* /usr/share/phpmyadmin
-  rm /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMINS_VER-all-languages.tar.gz
-  rm -rf /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMINS_VER-all-languages
+  cd /usr/share/phpmyadmin/ || exit
+  wget https://files.phpmyadmin.net/phpMyAdmin/$PHPMYADMIN_VER/phpMyAdmin-$PHPMYADMIN_VER-all-languages.tar.gz
+  tar xzf phpMyAdmin-$PHPMYADMIN_VER-all-languages.tar.gz
+  mv phpMyAdmin-$PHPMYADMIN_VER-all-languages/* /usr/share/phpmyadmin
+  rm /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMIN_VER-all-languages.tar.gz
+  rm -rf /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMIN_VER-all-languages
   mkdir /usr/share/phpmyadmin/tmp
   chmod 777 /usr/share/phpmyadmin/tmp
   randomBlowfishSecret=$(openssl rand -base64 32)
