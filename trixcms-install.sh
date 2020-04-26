@@ -61,7 +61,7 @@ function isRoot() {
 
 function initialCheck() {
   if ! isRoot; then
-    echo "Désolé, vous devez l'exécuter en tant que root"
+    echo "Désolé, vous devez exécuter ce script en tant que root"
     exit 1
   fi
   checkOS
