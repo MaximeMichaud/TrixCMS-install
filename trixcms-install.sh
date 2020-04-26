@@ -76,7 +76,7 @@ function checkOS() {
     source /etc/os-release
 
     if [[ "$ID" == "debian" || "$ID" == "raspbian" ]]; then
-      if [[ ! $VERSION_ID =~ (9|10) ]]; then
+      if [[ ! $VERSION_ID =~ (9|10|11) ]]; then
         echo "${alert}Votre version de Debian n'est pas supportée.${normal}"
         echo ""
         echo "${red}Si vous le souhaitez, vous pouvez tout de même continuer."
@@ -209,6 +209,15 @@ function aptinstall_mysql() {
       apt-get install --allow-unauthenticated mysql-server mysql-client -y
       systemctl enable mysql && systemctl start mysql
     fi
+	if [[ "$VERSION_ID" == "11" ]]; then
+      # not available right now
+      echo "deb http://repo.mysql.com/apt/debian/ bullseye mysql-8.0" >/etc/apt/sources.list.d/mysql.list
+      echo "deb-src http://repo.mysql.com/apt/debian/ bullseye mysql-8.0" >>/etc/apt/sources.list.d/mysql.list
+      apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
+      apt-get update
+      apt-get install --allow-unauthenticated mysql-server mysql-client -y
+      systemctl enable mysql && systemctl start mysql
+    fi
     if [[ "$VERSION_ID" == "16.04" ]]; then
       wget https://dev.mysql.com/get/mysql-apt-config_0.8.8-1_all.deb
       ls mysql-apt-config_0.8.8-1_all.deb
@@ -257,6 +266,15 @@ function aptinstall_php() {
       apt-get install php$PHP php$PHP-bcmath php$PHP-json php$PHP-mbstring php$PHP-common php$PHP-xml php$PHP-curl php$PHP-gd php$PHP-zip php$PHP-mysql php$PHP-sqlite -y
       sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20M|' /etc/php/$PHP/apache2/php.ini
       sed -i 's|post_max_size = 8M|post_max_size = 20M|' /etc/php/$PHP/apache2/php.ini
+      systemctl restart apache2
+    fi
+	if [[ "$VERSION_ID" == "11" ]]; then
+      # not available right now
+      echo "deb https://packages.sury.org/php/ bullseye main" | tee /etc/apt/sources.list.d/php.list
+      apt-get update >/dev/null
+      apt-get install php$PHP php$PHP-bcmath php$PHP-json php$PHP-mbstring php$PHP-common php$PHP-xml php$PHP-curl php$PHP-gd php$PHP-zip php$PHP-mysql php$PHP-sqlite -y
+      sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 50M|' /etc/php/$PHP/apache2/php.ini
+      sed -i 's|post_max_size = 8M|post_max_size = 50M|' /etc/php/$PHP/apache2/php.ini
       systemctl restart apache2
     fi
     if [[ "$VERSION_ID" == "16.04" ]]; then
