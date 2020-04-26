@@ -91,7 +91,7 @@ function checkOS() {
       fi
     elif [[ "$ID" == "ubuntu" ]]; then
       OS="ubuntu"
-      if [[ ! $VERSION_ID =~ (16.04|18.04) ]]; then
+      if [[ ! $VERSION_ID =~ (16.04|18.04|20.04) ]]; then
         echo "${alert}Votre version de Ubuntu n'est pas supportée.${normal}"
         echo ""
         echo "${red}Si vous le souhaitez, vous pouvez tout de même continuer."
@@ -314,8 +314,10 @@ function aptinstall_phpmyadmin() {
     mv phpMyAdmin-$PHPMYADMIN_VER-all-languages/* /usr/share/phpmyadmin
     rm /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMIN_VER-all-languages.tar.gz
     rm -rf /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMIN_VER-all-languages
+	# Create TempDir
     mkdir /usr/share/phpmyadmin/tmp || exit
-    chmod 777 /usr/share/phpmyadmin/tmp
+	chown www-data:www-data /usr/share/phpmyadmin/tmp
+    chmod 700 /usr/share/phpmyadmin/tmp
     randomBlowfishSecret=$(openssl rand -base64 32)
     sed -e "s|cfg\['blowfish_secret'\] = ''|cfg['blowfish_secret'] = '$randomBlowfishSecret'|" config.sample.inc.php >config.inc.php
     wget https://raw.githubusercontent.com/MaximeMichaud/TrixCMS-install/master/conf/phpmyadmin.conf
@@ -427,8 +429,10 @@ function updatephpMyAdmin() {
   mv phpMyAdmin-$PHPMYADMIN_VER-all-languages/* /usr/share/phpmyadmin
   rm /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMIN_VER-all-languages.tar.gz
   rm -rf /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMIN_VER-all-languages
+  # Create TempDir
   mkdir /usr/share/phpmyadmin/tmp || exit
-  chmod 777 /usr/share/phpmyadmin/tmp
+  chown www-data:www-data /usr/share/phpmyadmin/tmp
+  chmod 700 /usr/share/phpmyadmin/tmp
   randomBlowfishSecret=$(openssl rand -base64 32)
   sed -e "s|cfg\['blowfish_secret'\] = ''|cfg['blowfish_secret'] = '$randomBlowfishSecret'|" config.sample.inc.php >config.inc.php
 }
