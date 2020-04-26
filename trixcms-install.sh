@@ -98,7 +98,7 @@ function checkOS() {
         echo "Gardez à l'esprit que ce n'est supportée !${normal}"
         echo ""
         until [[ $CONTINUE =~ (y|n) ]]; do
-          read -rp "Continuer? [y/n]: " -e CONTINUE
+          read -rp "Continuer? [y/n] : " -e CONTINUE
         done
         if [[ "$CONTINUE" == "n" ]]; then
           exit 1
@@ -167,7 +167,6 @@ function installQuestions() {
   esac
   echo ""
   echo "Nous sommes prêts à commencer l'installation."
-  echo "You will be able to generate a client at the end of the installation."
   APPROVE_INSTALL=${APPROVE_INSTALL:-n}
   if [[ $APPROVE_INSTALL =~ n ]]; then
     read -n1 -r -p "Appuyez sur n'importe quelle touche pour continuer..."
@@ -209,7 +208,7 @@ function aptinstall_mysql() {
       apt-get install --allow-unauthenticated mysql-server mysql-client -y
       systemctl enable mysql && systemctl start mysql
     fi
-	if [[ "$VERSION_ID" == "11" ]]; then
+    if [[ "$VERSION_ID" == "11" ]]; then
       # not available right now
       echo "deb http://repo.mysql.com/apt/debian/ bullseye mysql-8.0" >/etc/apt/sources.list.d/mysql.list
       echo "deb-src http://repo.mysql.com/apt/debian/ bullseye mysql-8.0" >>/etc/apt/sources.list.d/mysql.list
@@ -265,7 +264,7 @@ function aptinstall_php() {
       sed -i 's|post_max_size = 8M|post_max_size = 50M|' /etc/php/$PHP/apache2/php.ini
       systemctl restart apache2
     fi
-	if [[ "$VERSION_ID" == "11" ]]; then
+    if [[ "$VERSION_ID" == "11" ]]; then
       # not available right now
       echo "deb https://packages.sury.org/php/ bullseye main" | tee /etc/apt/sources.list.d/php.list
       apt-get update >/dev/null
@@ -311,14 +310,14 @@ function aptinstall_phpmyadmin() {
     mv phpMyAdmin-$PHPMYADMIN_VER-all-languages/* /usr/share/phpmyadmin
     rm /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMIN_VER-all-languages.tar.gz
     rm -rf /usr/share/phpmyadmin/phpMyAdmin-$PHPMYADMIN_VER-all-languages
-	# Create TempDir
+    # Create TempDir
     mkdir /usr/share/phpmyadmin/tmp || exit
-	chown www-data:www-data /usr/share/phpmyadmin/tmp
+    chown www-data:www-data /usr/share/phpmyadmin/tmp
     chmod 700 /var/www/phpmyadmin/tmp
     randomBlowfishSecret=$(openssl rand -base64 32)
     sed -e "s|cfg\['blowfish_secret'\] = ''|cfg['blowfish_secret'] = '$randomBlowfishSecret'|" config.sample.inc.php >config.inc.php
     wget https://raw.githubusercontent.com/MaximeMichaud/TrixCMS-install/master/conf/phpmyadmin.conf
-	ln -s /usr/share/phpmyadmin /var/www/phpmyadmin
+    ln -s /usr/share/phpmyadmin /var/www/phpmyadmin
     mv phpmyadmin.conf /etc/apache2/sites-available/
     a2ensite phpmyadmin
     systemctl restart apache2
@@ -339,13 +338,14 @@ function install_ioncube() {
 }
 
 function install_trixcms() {
-  rm -rf /var/www/html/
-  mkdir /var/www/html
-  cd /var/www/html
+  rm -rf /var/www/html || exit
+  mkdir /var/www/html || exit
+  cd /var/www/html || exit
   wget https://trixcms.eu/u/download/cms
   unzip -q cms
   rm -rf cms
   chmod -R 777 /var/www/html
+  chown -R www-data:www-data /var/www/html
 }
 
 function install_composer() {
