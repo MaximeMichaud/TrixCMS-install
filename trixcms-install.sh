@@ -192,7 +192,7 @@ function aptinstall_apache2() {
 
 function aptinstall_mysql() {
   if [[ "$OS" =~ (debian|ubuntu) ]]; then
-    echo "MYSQL Installation"
+    echo "Installation MYSQL"
     if [[ "$VERSION_ID" == "9" ]]; then
       echo "deb http://repo.mysql.com/apt/debian/ stretch mysql-8.0" >/etc/apt/sources.list.d/mysql.list
       echo "deb-src http://repo.mysql.com/apt/debian/ stretch mysql-8.0" >>/etc/apt/sources.list.d/mysql.list
@@ -219,27 +219,24 @@ function aptinstall_mysql() {
       systemctl enable mysql && systemctl start mysql
     fi
     if [[ "$VERSION_ID" == "16.04" ]]; then
-      wget https://dev.mysql.com/get/mysql-apt-config_0.8.8-1_all.deb
-      ls mysql-apt-config_0.8.8-1_all.deb
-      dpkg -i mysql-apt-config_0.8.8-1_all.deb
+      echo "deb http://repo.mysql.com/apt/ubuntu/ xenial mysql-8.0" >/etc/apt/sources.list.d/mysql.list
+      echo "deb-src http://repo.mysql.com/apt/ubuntu/ xenial mysql-8.0" >>/etc/apt/sources.list.d/mysql.list
       apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
       apt-get update
       apt-get install --allow-unauthenticated mysql-server mysql-client -y
       systemctl enable mysql && systemctl start mysql
     fi
     if [[ "$VERSION_ID" == "18.04" ]]; then
-      wget https://dev.mysql.com/get/mysql-apt-config_0.8.13-1_all.deb
-      ls mysql-apt-config_0.8.13-1_all.deb
-      dpkg -i mysql-apt-config_0.8.13-1_all.deb
+      echo "deb http://repo.mysql.com/apt/ubuntu/ bionic mysql-8.0" >/etc/apt/sources.list.d/mysql.list
+      echo "deb-src http://repo.mysql.com/apt/ubuntu/ bionic mysql-8.0" >>/etc/apt/sources.list.d/mysql.list
       apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
       apt-get update
       apt-get install --allow-unauthenticated mysql-server mysql-client -y
       systemctl enable mysql && systemctl start mysql
     fi
     if [[ "$VERSION_ID" == "20.04" ]]; then
-      wget https://dev.mysql.com/get/mysql-apt-config_0.8.13-1_all.deb
-      ls mysql-apt-config_0.8.13-1_all.deb
-      dpkg -i mysql-apt-config_0.8.13-1_all.deb
+      echo "deb http://repo.mysql.com/apt/ubuntu/ focal mysql-8.0" >/etc/apt/sources.list.d/mysql.list
+      echo "deb-src http://repo.mysql.com/apt/ubuntu/ focal mysql-8.0" >>/etc/apt/sources.list.d/mysql.list
       apt-key adv --keyserver keys.gnupg.net --recv-keys 8C718D3B5072E1F5
       apt-get update
       apt-get install --allow-unauthenticated mysql-server mysql-client -y
@@ -250,7 +247,7 @@ function aptinstall_mysql() {
 
 function aptinstall_php() {
   if [[ "$OS" =~ (debian|ubuntu) ]]; then
-    echo "PHP Installation"
+    echo "Installation PHP"
     wget -q https://packages.sury.org/php/apt.gpg -O- | apt-key add -
     if [[ "$VERSION_ID" == "9" ]]; then
       echo "deb https://packages.sury.org/php/ stretch main" | tee /etc/apt/sources.list.d/php.list
@@ -317,7 +314,7 @@ function aptinstall_phpmyadmin() {
 	# Create TempDir
     mkdir /usr/share/phpmyadmin/tmp || exit
 	chown www-data:www-data /usr/share/phpmyadmin/tmp
-    chmod 700 /usr/share/phpmyadmin/tmp
+    chmod 700 /var/www/phpmyadmin/tmp
     randomBlowfishSecret=$(openssl rand -base64 32)
     sed -e "s|cfg\['blowfish_secret'\] = ''|cfg['blowfish_secret'] = '$randomBlowfishSecret'|" config.sample.inc.php >config.inc.php
     wget https://raw.githubusercontent.com/MaximeMichaud/TrixCMS-install/master/conf/phpmyadmin.conf
@@ -432,7 +429,7 @@ function updatephpMyAdmin() {
   # Create TempDir
   mkdir /usr/share/phpmyadmin/tmp || exit
   chown www-data:www-data /usr/share/phpmyadmin/tmp
-  chmod 700 /usr/share/phpmyadmin/tmp
+  chmod 700 /var/www/phpmyadmin/tmp
   randomBlowfishSecret=$(openssl rand -base64 32)
   sed -e "s|cfg\['blowfish_secret'\] = ''|cfg['blowfish_secret'] = '$randomBlowfishSecret'|" config.sample.inc.php >config.inc.php
 }
