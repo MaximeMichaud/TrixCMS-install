@@ -26,7 +26,7 @@ Le script supporte ces OS:
 | CentOS 7 |❌|
 ## Features
 * MySQL 8
-* PHP 7.2 à 7.4
+* PHP 7.3 à 7.4
 * phpMyAdmin 5.0.2
 ## To-Do
 https://github.com/MaximeMichaud/TrixCMS-install/projects/1

@@ -3,7 +3,7 @@
 # [Script d'installation automatique sur Linux pour TrixCMS]
 #
 # GitHub : https://github.com/MaximeMichaud/TrixCMS-install
-# URL : https://trixcms.eu/
+# URL : https://trixcms.eu
 #
 # Ce script est destiné à une installation rapide et facile :
 # wget https://raw.githubusercontent.com/MaximeMichaud/TrixCMS-install/master/trixcms-install.sh
@@ -136,20 +136,16 @@ function installQuestions() {
   echo "${alert}Veuillez sélectionner pour MYSQL : Use Legacy Authentication Method${normal}"
   echo "${cyan}Quelle version de PHP ?"
   echo "${red}Rouge = Fin de vie ${yellow}| Jaune = Sécurité uniquement ${green}| Vert = Support & Sécurité"
-  echo "${yellow}   1) PHP 7.2 "
-  echo "${green}   2) PHP 7.3 (recommandé) ${normal}${cyan} "
-  #echo "   3) PHP 7.4 (recommandé) ${normal}${cyan}" (ioncube pas 7.4)
+  echo "${green}   1) PHP 7.3 "
+  echo "   2) PHP 7.4 (recommandé) ${normal}${cyan}"
   until [[ "$PHP_VERSION" =~ ^[1-2]$ ]]; do
     read -rp "Version [1-2]: " -e -i 2 PHP_VERSION
   done
   case $PHP_VERSION in
   1)
-    PHP="7.2"
-    ;;
-  2)
     PHP="7.3"
     ;;
-  3)
+  2)
     PHP="7.4"
     ;;
   esac
