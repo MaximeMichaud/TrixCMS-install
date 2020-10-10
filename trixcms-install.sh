@@ -56,7 +56,7 @@ function initialCheck() {
 }
 
 # Define versions
-PHPMYADMIN_VER=5.0.2
+PHPMYADMIN_VER=5.0.3
 
 function checkOS() {
   if [[ -e /etc/debian_version ]]; then
